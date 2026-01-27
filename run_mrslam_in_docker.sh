@@ -146,10 +146,18 @@ start_rosbag_demo() {
 
 start_rosbag_full() {
     log_step "启动完整模式 rosbags..."
+    local first_bag=true
     for i in $(seq 1 $NUM_ROBOTS); do
         local bag_file="${FULL_BAG_DIR}/loop_${i}.bag"
         if [ -f "$bag_file" ]; then
-            run_in_tmux "mrslam" "bag_${i}" "rosbag play ${bag_file} --clock"
+            if [ "$first_bag" = true ]; then
+                # 第一个 bag 使用 --clock 发布时钟
+                run_in_tmux "mrslam" "bag_${i}" "rosbag play ${bag_file} --clock"
+                first_bag=false
+            else
+                # 其他 bag 不带 --clock，使用第一个 bag 的时钟
+                run_in_tmux "mrslam" "bag_${i}" "rosbag play ${bag_file}"
+            fi
         else
             log_warn "rosbag 文件不存在: $bag_file"
         fi
