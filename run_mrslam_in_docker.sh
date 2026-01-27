@@ -138,7 +138,7 @@ start_rosbag_demo() {
         log_info "  Baidu Pan: https://pan.baidu.com/s/1dcDRyn-G7TilFpc8shLQNA?pwd=gupx"
         exit 1
     fi
-    run_in_tmux "mrslam" "rosbag" "rosbag play ${DEMO_BAG_PATH} --clock --pause"
+    run_in_tmux "mrslam" "rosbag" "rosbag play ${DEMO_BAG_PATH} --clock"
     sleep 2
 }
 
@@ -147,11 +147,7 @@ start_rosbag_full() {
     for i in $(seq 1 $NUM_ROBOTS); do
         local bag_file="${FULL_BAG_DIR}/loop_${i}.bag"
         if [ -f "$bag_file" ]; then
-            if [ $i -eq 1 ]; then
-                run_in_tmux "mrslam" "bag_${i}" "rosbag play ${bag_file} --clock --pause"
-            else
-                run_in_tmux "mrslam" "bag_${i}" "rosbag play ${bag_file}"
-            fi
+            run_in_tmux "mrslam" "bag_${i}" "rosbag play ${bag_file} --clock"
         else
             log_warn "rosbag 文件不存在: $bag_file"
         fi
@@ -267,8 +263,8 @@ run_demo_mode() {
     log_info "         Demo 启动完成!"
     log_info "============================================"
     log_info ""
+    log_info "rosbag 已自动开始播放"
     log_info "使用 tmux attach -t mrslam 查看各个终端"
-    log_info "在 rosbag 窗口按空格键开始播放"
     log_info ""
     log_info "停止运行: bash $0 stop"
 }
@@ -294,8 +290,8 @@ run_full_mode() {
     log_info "         Full 模式启动完成!"
     log_info "============================================"
     log_info ""
+    log_info "rosbag 已自动开始播放"
     log_info "使用 tmux attach -t mrslam 查看各个终端"
-    log_info "在第一个 rosbag 窗口按空格键开始播放"
     log_info ""
     log_info "停止运行: bash $0 stop"
 }
@@ -406,10 +402,20 @@ check_status() {
     
     echo ""
     log_step "检查循环检测节点..."
-    if pgrep -f "main_RINGplusplus.py\|main_RING.py\|main_SC.py\|disco_ros" > /dev/null; then
+    if pgrep -f "main_RINGplusplus" > /dev/null || pgrep -f "main_RING.py" > /dev/null || pgrep -f "main_SC" > /dev/null || pgrep -f "disco_ros" > /dev/null; then
         log_info "循环检测节点正在运行"
     else
-        log_warn "循环检测节点未运行"
+        # 再次尝试通过 python3 进程检测
+        if ps aux | grep -E "python3.*RING" | grep -v grep > /dev/null; then
+            log_info "循环检测节点正在运行"
+        else
+            log_warn "循环检测节点未运行"
+            # 尝试显示 loop_detect 窗口的最近输出
+            if tmux has-session -t mrslam 2>/dev/null; then
+                echo "  loop_detect 窗口最近输出:"
+                tmux capture-pane -t mrslam:loop_detect -p 2>/dev/null | tail -5 | sed 's/^/    /' || echo "    (无法获取)"
+            fi
+        fi
     fi
     
     echo ""
