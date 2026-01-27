@@ -203,13 +203,13 @@ start_loop_detection() {
             run_in_tmux "mrslam" "loop_detect" "source ${LOOPDETECTION_WS}/devel/setup.bash && rosrun disco_ros main.py"
             ;;
         "scancontext")
-            run_in_tmux "mrslam" "loop_detect" "cd ${LOOPDETECTION_WS}/src/RING_ros && python3 main_SC.py"
+            run_in_tmux "mrslam" "loop_detect" "source ${LOOPDETECTION_WS}/devel/setup.bash && cd ${LOOPDETECTION_WS}/src/RING_ros && python3 main_SC.py"
             ;;
         "ring")
-            run_in_tmux "mrslam" "loop_detect" "cd ${LOOPDETECTION_WS}/src/RING_ros && python3 main_RING.py"
+            run_in_tmux "mrslam" "loop_detect" "source ${LOOPDETECTION_WS}/devel/setup.bash && cd ${LOOPDETECTION_WS}/src/RING_ros && python3 main_RING.py"
             ;;
         "ringplusplus")
-            run_in_tmux "mrslam" "loop_detect" "cd ${LOOPDETECTION_WS}/src/RING_ros && python3 main_RINGplusplus.py"
+            run_in_tmux "mrslam" "loop_detect" "source ${LOOPDETECTION_WS}/devel/setup.bash && cd ${LOOPDETECTION_WS}/src/RING_ros && python3 main_RINGplusplus.py"
             ;;
         *)
             log_error "未知的循环检测方法: $LOOP_DETECTION_METHOD"
