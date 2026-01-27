@@ -189,7 +189,7 @@ start_elevation_mapping() {
     # 启动 fake image 生成器 (如果机器人没有相机)
     log_step "启动 fake image 生成器..."
     for i in $(seq 1 $NUM_ROBOTS); do
-        run_in_tmux "mrslam" "fake_img_${i}" "cd ${TOOLS_DIR}/Fake_img && python robot_${i}.py"
+        run_in_tmux "mrslam" "fake_img_${i}" "cd ${TOOLS_DIR}/Fake_img && python3 robot_${i}.py"
     done
     sleep 2
 }
@@ -203,13 +203,13 @@ start_loop_detection() {
             run_in_tmux "mrslam" "loop_detect" "source ${LOOPDETECTION_WS}/devel/setup.bash && rosrun disco_ros main.py"
             ;;
         "scancontext")
-            run_in_tmux "mrslam" "loop_detect" "cd ${LOOPDETECTION_WS}/src/RING_ros && python main_SC.py"
+            run_in_tmux "mrslam" "loop_detect" "cd ${LOOPDETECTION_WS}/src/RING_ros && python3 main_SC.py"
             ;;
         "ring")
-            run_in_tmux "mrslam" "loop_detect" "cd ${LOOPDETECTION_WS}/src/RING_ros && python main_RING.py"
+            run_in_tmux "mrslam" "loop_detect" "cd ${LOOPDETECTION_WS}/src/RING_ros && python3 main_RING.py"
             ;;
         "ringplusplus")
-            run_in_tmux "mrslam" "loop_detect" "cd ${LOOPDETECTION_WS}/src/RING_ros && python main_RINGplusplus.py"
+            run_in_tmux "mrslam" "loop_detect" "cd ${LOOPDETECTION_WS}/src/RING_ros && python3 main_RINGplusplus.py"
             ;;
         *)
             log_error "未知的循环检测方法: $LOOP_DETECTION_METHOD"
