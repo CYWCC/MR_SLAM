@@ -335,6 +335,9 @@ show_help() {
     echo "  full          完整多机器人模式"
     echo "  single        单机器人模式 (实时传感器)"
     echo "  stop          停止所有节点"
+    echo "  status        检查各节点运行状态"
+    echo "  topics        查看当前 ROS topics"
+    echo "  nodes         查看当前 ROS nodes"
     echo "  help          显示此帮助信息"
     echo ""
     echo "选项 (通过环境变量设置):"
@@ -344,10 +347,148 @@ show_help() {
     echo "  ENABLE_ELEVATION_MAPPING 是否启用高程建图 (true/false)"
     echo "  ENABLE_COSTMAP          是否启用 costmap (true/false)"
     echo ""
+    echo "调试步骤:"
+    echo "  1. 运行 '$0 status' 检查各节点状态"
+    echo "  2. 运行 '$0 topics' 查看 ROS topics"
+    echo "  3. 运行 'tmux attach -t mrslam' 进入 tmux 查看各终端输出"
+    echo "  4. 在 rosbag 窗口按空格键开始播放"
+    echo ""
     echo "示例:"
     echo "  $0 demo"
     echo "  $0 full"
     echo "  LOOP_DETECTION_METHOD=ring NUM_ROBOTS=2 $0 full"
+}
+
+# ====================== 状态检查函数 ======================
+check_status() {
+    log_info "============================================"
+    log_info "         MR_SLAM 状态检查"
+    log_info "============================================"
+    
+    check_ros
+    
+    echo ""
+    log_step "检查 tmux 会话..."
+    if tmux has-session -t mrslam 2>/dev/null; then
+        log_info "tmux 会话 'mrslam' 存在"
+        echo "  窗口列表:"
+        tmux list-windows -t mrslam 2>/dev/null | sed 's/^/    /'
+    else
+        log_warn "tmux 会话 'mrslam' 不存在"
+    fi
+    
+    echo ""
+    log_step "检查 roscore..."
+    if pgrep -f roscore > /dev/null; then
+        log_info "roscore 正在运行"
+    else
+        log_error "roscore 未运行!"
+    fi
+    
+    echo ""
+    log_step "检查 ROS Master..."
+    if rostopic list &>/dev/null; then
+        log_info "ROS Master 可访问"
+    else
+        log_error "ROS Master 不可访问! 请检查 roscore"
+    fi
+    
+    echo ""
+    log_step "检查 rosbag..."
+    if pgrep -f "rosbag play" > /dev/null; then
+        log_info "rosbag 正在运行"
+    else
+        log_warn "rosbag 未运行或已暂停 (按空格键开始播放)"
+    fi
+    
+    echo ""
+    log_step "检查循环检测节点..."
+    if pgrep -f "main_RINGplusplus.py\|main_RING.py\|main_SC.py\|disco_ros" > /dev/null; then
+        log_info "循环检测节点正在运行"
+    else
+        log_warn "循环检测节点未运行"
+    fi
+    
+    echo ""
+    log_step "检查 global_manager..."
+    if rosnode list 2>/dev/null | grep -q "global_manager"; then
+        log_info "global_manager 节点正在运行"
+    else
+        log_warn "global_manager 节点未找到"
+    fi
+    
+    echo ""
+    log_step "检查 rviz..."
+    if pgrep -f rviz > /dev/null; then
+        log_info "rviz 正在运行"
+    else
+        log_warn "rviz 未运行"
+    fi
+    
+    echo ""
+    log_info "============================================"
+    log_info "提示: 使用 'tmux attach -t mrslam' 查看详细输出"
+    log_info "============================================"
+}
+
+show_topics() {
+    log_info "============================================"
+    log_info "         当前 ROS Topics"
+    log_info "============================================"
+    
+    check_ros
+    
+    if ! rostopic list &>/dev/null; then
+        log_error "ROS Master 不可访问!"
+        return 1
+    fi
+    
+    echo ""
+    log_step "所有 topics:"
+    rostopic list
+    
+    echo ""
+    log_step "关键 topics 检查:"
+    
+    # 检查点云 topics
+    echo "  点云 topics:"
+    rostopic list 2>/dev/null | grep -E "cloud|points|velodyne|livox" | sed 's/^/    /' || echo "    (无)"
+    
+    # 检查 submap topics
+    echo "  Submap topics:"
+    rostopic list 2>/dev/null | grep -i submap | sed 's/^/    /' || echo "    (无)"
+    
+    # 检查 descriptor topics
+    echo "  Descriptor topics:"
+    rostopic list 2>/dev/null | grep -iE "disco|ring|descriptor" | sed 's/^/    /' || echo "    (无)"
+    
+    # 检查 merged topics
+    echo "  Merged topics:"
+    rostopic list 2>/dev/null | grep -i merged | sed 's/^/    /' || echo "    (无)"
+    
+    echo ""
+    log_info "使用 'rostopic echo <topic>' 查看具体消息"
+    log_info "使用 'rostopic hz <topic>' 查看发布频率"
+}
+
+show_nodes() {
+    log_info "============================================"
+    log_info "         当前 ROS Nodes"
+    log_info "============================================"
+    
+    check_ros
+    
+    if ! rosnode list &>/dev/null; then
+        log_error "ROS Master 不可访问!"
+        return 1
+    fi
+    
+    echo ""
+    log_step "所有节点:"
+    rosnode list
+    
+    echo ""
+    log_info "使用 'rosnode info <node>' 查看节点详情"
 }
 
 # ====================== 主程序 ======================
@@ -365,6 +506,15 @@ main() {
         "stop")
             cleanup
             log_info "所有节点已停止"
+            ;;
+        "status")
+            check_status
+            ;;
+        "topics")
+            show_topics
+            ;;
+        "nodes")
+            show_nodes
             ;;
         "help"|"-h"|"--help")
             show_help
