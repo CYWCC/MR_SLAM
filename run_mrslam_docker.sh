@@ -25,5 +25,6 @@ docker run -it \
   -v /etc/passwd:/etc/passwd:ro \
   -v /etc/group:/etc/group:ro \
   -v /home/cyw/CYW/mapping/MR_SLAM:/home/cyw_local/MR_SLAM \
+  -v /media/cyw/KESU:/media/cyw/KESU \
   maverickp/mrslam:noetic \
   bash --noprofile --norc -lc 'mkdir -p /tmp/home/.ros && source /opt/ros/noetic/setup.bash && exec bash'

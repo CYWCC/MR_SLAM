@@ -32,8 +32,8 @@ TOOLS_DIR="${MRSLAM_ROOT}/Tools"
 VIS_DIR="${MRSLAM_ROOT}/Visualization"
 
 # rosbag 路径 (根据实际情况修改)
-DEMO_BAG_PATH="/home/data/3_dog.bag"
-FULL_BAG_DIR="/home/data"
+DEMO_BAG_PATH="/media/cyw/KESU/mapping_data/MR_SLAM_data/3_dog.bag"
+FULL_BAG_DIR="/media/cyw/KESU/mapping_data/MR_SLAM_data"
 
 # 循环检测方法: disco, scancontext, ring, ringplusplus
 LOOP_DETECTION_METHOD="ringplusplus"
