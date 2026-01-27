@@ -198,18 +198,21 @@ start_loop_detection() {
     log_step "启动循环检测 (${LOOP_DETECTION_METHOD})..."
     source_workspace "$LOOPDETECTION_WS"
     
+    # 创建可写的工作目录
+    local RING_WORK_DIR="/tmp/ring_ros"
+    
     case "$LOOP_DETECTION_METHOD" in
         "disco")
             run_in_tmux "mrslam" "loop_detect" "source ${LOOPDETECTION_WS}/devel/setup.bash && rosrun disco_ros main.py"
             ;;
         "scancontext")
-            run_in_tmux "mrslam" "loop_detect" "source ${LOOPDETECTION_WS}/devel/setup.bash && cd ${LOOPDETECTION_WS}/src/RING_ros && python3 main_SC.py"
+            run_in_tmux "mrslam" "loop_detect" "source ${LOOPDETECTION_WS}/devel/setup.bash && mkdir -p ${RING_WORK_DIR} && cd ${RING_WORK_DIR} && python3 ${LOOPDETECTION_WS}/src/RING_ros/main_SC.py"
             ;;
         "ring")
-            run_in_tmux "mrslam" "loop_detect" "source ${LOOPDETECTION_WS}/devel/setup.bash && cd ${LOOPDETECTION_WS}/src/RING_ros && python3 main_RING.py"
+            run_in_tmux "mrslam" "loop_detect" "source ${LOOPDETECTION_WS}/devel/setup.bash && mkdir -p ${RING_WORK_DIR} && cd ${RING_WORK_DIR} && python3 ${LOOPDETECTION_WS}/src/RING_ros/main_RING.py"
             ;;
         "ringplusplus")
-            run_in_tmux "mrslam" "loop_detect" "source ${LOOPDETECTION_WS}/devel/setup.bash && cd ${LOOPDETECTION_WS}/src/RING_ros && python3 main_RINGplusplus.py"
+            run_in_tmux "mrslam" "loop_detect" "source ${LOOPDETECTION_WS}/devel/setup.bash && mkdir -p ${RING_WORK_DIR} && cd ${RING_WORK_DIR} && python3 ${LOOPDETECTION_WS}/src/RING_ros/main_RINGplusplus.py"
             ;;
         *)
             log_error "未知的循环检测方法: $LOOP_DETECTION_METHOD"
