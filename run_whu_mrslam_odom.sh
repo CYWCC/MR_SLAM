@@ -6,11 +6,13 @@
 set -e
 
 # ====================== 路径配置 ======================
-MAPPING_WS="/home/Mapping"
-LOOPDETECTION_WS="/home/LoopDetection"
-COSTMAP_WS="/home/Costmap"
-TOOLS_DIR="/home/Tools"
-VIS_DIR="/home/Visualization"
+
+MRSLAM_ROOT="/home"
+MAPPING_WS="${MRSLAM_ROOT}/Mapping"
+LOOPDETECTION_WS="${MRSLAM_ROOT}/LoopDetection"
+COSTMAP_WS="${MRSLAM_ROOT}/Costmap"
+TOOLS_DIR="${MRSLAM_ROOT}/Tools"
+VIS_DIR="${MRSLAM_ROOT}/Visualization"
 
 # ====================== bag路径（请根据实际情况修改） ======================
 BAG0="/media/cyw/KESU/mapping_data/MRDR_Odom_data/group1/robot0.bag"
@@ -22,22 +24,40 @@ LOOP_DETECTION_METHOD="scancontext"
 ENABLE_ELEVATION_MAPPING=false
 ENABLE_COSTMAP=false
 
-log_info() { echo -e "\033[0;32m[INFO]\033[0m $1"; }
-log_step() { echo -e "\033[0;34m[STEP]\033[0m $1"; }
+# ====================== 颜色定义 ======================
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+CYAN='\033[0;36m'
+NC='\033[0m'
 
-run_in_tmux() {
-    local session_name=$1
-    local window_name=$2
-    local command=$3
-    if ! tmux has-session -t "$session_name" 2>/dev/null; then
-        tmux new-session -d -s "$session_name" -n "$window_name"
-        tmux send-keys -t "${session_name}:${window_name}" "$command" C-m
+log_info() { echo -e "${GREEN}[INFO]${NC} $1"; }
+log_warn() { echo -e "${YELLOW}[WARN]${NC} $1"; }
+log_error() { echo -e "${RED}[ERROR]${NC} $1"; }
+log_step() { echo -e "${BLUE}[STEP]${NC} $1"; }
+log_config() { echo -e "${CYAN}[CONFIG]${NC} $1"; }
+
+check_ros() {
+    if [ -z "$ROS_DISTRO" ]; then
+        log_info "Sourcing ROS setup..."
+        source /opt/ros/noetic/setup.bash 2>/dev/null || \
+        source /opt/ros/melodic/setup.bash 2>/dev/null || \
+        source /opt/ros/kinetic/setup.bash
+    fi
+    log_info "ROS_DISTRO: $ROS_DISTRO"
+}
+
+source_workspace() {
+    local ws_path=$1
+    if [ -f "${ws_path}/devel/setup.bash" ]; then
+        source "${ws_path}/devel/setup.bash"
     else
-        tmux new-window -t "$session_name" -n "$window_name"
-        tmux send-keys -t "${session_name}:${window_name}" "$command" C-m
+        log_warn "工作空间 ${ws_path}/devel/setup.bash 未找到"
     fi
 }
 
+# ====================== 启动函数 ======================
 cleanup() {
     pkill -f roscore 2>/dev/null || true
     pkill -f roslaunch 2>/dev/null || true
@@ -87,15 +107,79 @@ start_visualization() {
     fi
 }
 
-main() {
+run_full_mode() {
+    log_info "============================================"
+    log_info "    WHU Multi-Robot SLAM 完整模式"
+    log_info "============================================"
+    log_config "Bag 文件: $BAG0, $BAG1, $BAG2"
+    log_config "机器人数量: $NUM_ROBOTS"
+    log_config "回环检测: $LOOP_DETECTION_METHOD"
+    log_info "============================================"
+    
     cleanup
+    check_ros
+    
     start_roscore
     start_rosbags
     start_loop_detection
     start_global_manager
     start_visualization
-    log_info "系统启动完成！"
-    log_info "使用 tmux attach -t jackal_mrslam 查看各终端"
+    
+    log_info "============================================"
+    log_info "         系统启动完成!"
+    log_info "============================================"
+    log_info ""
+    log_info "rosbag 已自动开始播放"
+    log_info "使用 tmux attach -t jackal_mrslam 查看各个终端"
+    log_info ""
+    log_info "停止运行: bash $0 stop"
+}
+
+show_help() {
+    echo "WHU Multi-Robot SLAM 启动脚本"
+    echo ""
+    echo "用法: $0 [命令]"
+    echo ""
+    echo "命令:"
+    echo "  run         运行完整的多机器人 SLAM 系统"
+    echo "  stop        停止所有节点"
+    echo "  help        显示此帮助信息"
+    echo ""
+    echo "配置说明:"
+    echo "  请在脚本中修改以下变量:"
+    echo "    BAG0/BAG1/BAG2             - 你的 rosbag 文件路径"
+    echo "    LOOP_DETECTION_METHOD      - 回环检测方法"
+    echo ""
+    echo "Topic 映射:"
+    echo "  /robot_0/odom -> /robot_1/Odometry"
+    echo "  /robot_0/full_cloud -> /robot_1/cloud_registered"
+    echo "  /robot_1/odom -> /robot_2/Odometry"
+    echo "  /robot_1/full_cloud -> /robot_2/cloud_registered"
+    echo "  /robot_2/odom -> /robot_3/Odometry"
+    echo "  /robot_2/full_cloud -> /robot_3/cloud_registered"
+    echo ""
+    echo "示例:"
+    echo "  $0 run"
+}
+
+main() {
+    case "${1:-help}" in
+        "run")
+            run_full_mode
+            ;;
+        "stop")
+            cleanup
+            log_info "所有节点已停止"
+            ;;
+        "help"|"-h"|"--help")
+            show_help
+            ;;
+        *)
+            log_error "未知命令: $1"
+            show_help
+            exit 1
+            ;;
+    esac
 }
 
 main "$@"
