@@ -59,8 +59,9 @@ LOOP_DETECTION_METHOD="scancontext"
 # 里程计方法: fastlio, aloam
 ODOMETRY_METHOD="fastlio"
 
-# LiDAR 类型: livox (1), velodyne (2), ouster (3)
-LIDAR_TYPE=1
+# LiDAR 类型: livox_CustomMsg (1), PointCloud2 (2), ouster (3)
+# 注意: 你的 bag 是 PointCloud2 格式，所以使用 2
+LIDAR_TYPE=2
 
 # 是否启用高程建图
 ENABLE_ELEVATION_MAPPING=false
@@ -285,7 +286,13 @@ start_costmap() {
 
 start_visualization() {
     log_step "启动可视化..."
-    run_in_tmux "jackal_mrslam" "rviz" "rviz -d ${VIS_DIR}/vis.rviz"
+    # 使用 Jackal 专用的 rviz 配置 (挂载路径)
+    local JACKAL_VIS="/home/cyw_local/MR_SLAM/Visualization/vis_jackal.rviz"
+    if [ -f "$JACKAL_VIS" ]; then
+        run_in_tmux "jackal_mrslam" "rviz" "rviz -d ${JACKAL_VIS}"
+    else
+        run_in_tmux "jackal_mrslam" "rviz" "rviz -d ${VIS_DIR}/vis.rviz"
+    fi
 }
 
 # ====================== 模式函数 ======================
