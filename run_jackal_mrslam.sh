@@ -40,7 +40,7 @@ VIS_DIR="${MRSLAM_ROOT}/Visualization"
 
 # ====================== Jackal Bag 配置 ======================
 # 你的 rosbag 文件路径 (根据实际情况修改)
-JACKAL_BAG_PATH="/media/cyw/KESU/mapping_data/your_jackal_bag.bag"
+JACKAL_BAG_PATH="/media/cyw/KESU/mapping_data/20250516_rawdata/whu_group5.bag"
 
 # 机器人映射配置: jackal0 -> robot_1, jackal1 -> robot_2, jackal2 -> robot_3
 declare -A ROBOT_MAPPING=(
@@ -200,11 +200,14 @@ start_odometry() {
     log_step "启动里程计 (${ODOMETRY_METHOD})..."
     source_workspace "$LOCALIZATION_WS"
     
+    # Jackal 自定义配置路径 (挂载到 Docker 内的路径)
+    local JACKAL_LAUNCH_DIR="/home/cyw_local/MR_SLAM/Localization/src/FAST_LIO/launch"
+    
     for i in $(seq 1 $NUM_ROBOTS); do
         if [ "$ODOMETRY_METHOD" == "fastlio" ]; then
-            # 使用专门为 Jackal Livox 配置的 launch 文件
+            # 使用绝对路径启动 Jackal 专用 launch 文件
             run_in_tmux "jackal_mrslam" "odom_${i}" \
-                "source ${LOCALIZATION_WS}/devel/setup.bash && roslaunch fast_lio jackal_${i}.launch"
+                "source ${LOCALIZATION_WS}/devel/setup.bash && roslaunch ${JACKAL_LAUNCH_DIR}/jackal_${i}.launch"
         else
             run_in_tmux "jackal_mrslam" "odom_${i}" \
                 "source ${LOCALIZATION_WS}/devel/setup.bash && roslaunch aloam robot_${i}.launch"
