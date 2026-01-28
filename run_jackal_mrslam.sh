@@ -105,6 +105,10 @@ check_ros() {
         source /opt/ros/kinetic/setup.bash
     fi
     log_info "ROS_DISTRO: $ROS_DISTRO"
+    
+    # 创建 FAST-LIO 日志目录 (消除 "doesn't exist" 警告)
+    mkdir -p /home/Localization/src/FAST_LIO/Log 2>/dev/null || true
+    mkdir -p /home/Localization/src/FAST_LIO/PCD 2>/dev/null || true
 }
 
 source_workspace() {
@@ -135,7 +139,6 @@ cleanup() {
     pkill -f roscore 2>/dev/null || true
     pkill -f roslaunch 2>/dev/null || true
     pkill -f rosbag 2>/dev/null || true
-    pkill -f relay 2>/dev/null || true
     pkill -f main.py 2>/dev/null || true
     pkill -f main_RING.py 2>/dev/null || true
     pkill -f main_SC.py 2>/dev/null || true
@@ -145,37 +148,17 @@ cleanup() {
 }
 
 # ====================== Topic 重映射函数 ======================
+# 注意: Topic 重映射现在通过 rosbag play 的 --remap 参数实现
+# 这样可以保持原始消息类型 (livox_ros_driver/CustomMsg)
+# 以下函数保留用于调试目的，但在正常运行时不再需要
 start_topic_remapping() {
-    log_step "启动 topic 重映射..."
-    
-    # 使用 topic_tools/relay 进行重映射
-    # jackal0 -> robot_1
-    run_in_tmux "jackal_mrslam" "remap_lidar_1" \
-        "rosrun topic_tools relay /jackal0/livox/lidar /robot_1/pointcloud"
-    run_in_tmux "jackal_mrslam" "remap_imu_1" \
-        "rosrun topic_tools relay /jackal0/livox/imu /robot_1/imu"
-    
-    # jackal1 -> robot_2
-    run_in_tmux "jackal_mrslam" "remap_lidar_2" \
-        "rosrun topic_tools relay /jackal1/livox/lidar /robot_2/pointcloud"
-    run_in_tmux "jackal_mrslam" "remap_imu_2" \
-        "rosrun topic_tools relay /jackal1/livox/imu /robot_2/imu"
-    
-    # jackal2 -> robot_3
-    run_in_tmux "jackal_mrslam" "remap_lidar_3" \
-        "rosrun topic_tools relay /jackal2/livox/lidar /robot_3/pointcloud"
-    run_in_tmux "jackal_mrslam" "remap_imu_3" \
-        "rosrun topic_tools relay /jackal2/livox/imu /robot_3/imu"
-    
-    log_info "Topic 重映射已启动:"
+    log_info "Topic 重映射已通过 rosbag play 实现，无需额外节点"
     log_config "  /jackal0/livox/lidar -> /robot_1/pointcloud"
     log_config "  /jackal0/livox/imu   -> /robot_1/imu"
     log_config "  /jackal1/livox/lidar -> /robot_2/pointcloud"
     log_config "  /jackal1/livox/imu   -> /robot_2/imu"
     log_config "  /jackal2/livox/lidar -> /robot_3/pointcloud"
     log_config "  /jackal2/livox/imu   -> /robot_3/imu"
-    
-    sleep 2
 }
 
 # ====================== 启动函数 ======================
@@ -186,13 +169,23 @@ start_roscore() {
 }
 
 start_rosbag() {
-    log_step "启动 rosbag..."
+    log_step "启动 rosbag (带 topic 重映射)..."
     if [ ! -f "$JACKAL_BAG_PATH" ]; then
         log_error "rosbag 文件不存在: $JACKAL_BAG_PATH"
         log_info "请修改脚本中的 JACKAL_BAG_PATH 变量"
         exit 1
     fi
-    run_in_tmux "jackal_mrslam" "rosbag" "rosbag play ${JACKAL_BAG_PATH} --clock"
+    
+    # 使用 rosbag play 的 --remap 功能进行 topic 重映射
+    # 这样可以保持原始消息类型 (livox_ros_driver/CustomMsg)
+    run_in_tmux "jackal_mrslam" "rosbag" \
+        "rosbag play ${JACKAL_BAG_PATH} --clock \
+        /jackal0/livox/lidar:=/robot_1/pointcloud \
+        /jackal0/livox/imu:=/robot_1/imu \
+        /jackal1/livox/lidar:=/robot_2/pointcloud \
+        /jackal1/livox/imu:=/robot_2/imu \
+        /jackal2/livox/lidar:=/robot_3/pointcloud \
+        /jackal2/livox/imu:=/robot_3/imu"
     sleep 2
 }
 
