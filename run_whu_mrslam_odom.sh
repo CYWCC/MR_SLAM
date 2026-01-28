@@ -57,6 +57,20 @@ source_workspace() {
     fi
 }
 
+run_in_tmux() {
+    local session_name=$1
+    local window_name=$2
+    local command=$3
+    
+    if ! tmux has-session -t "$session_name" 2>/dev/null; then
+        tmux new-session -d -s "$session_name" -n "$window_name"
+        tmux send-keys -t "${session_name}:${window_name}" "$command" C-m
+    else
+        tmux new-window -t "$session_name" -n "$window_name"
+        tmux send-keys -t "${session_name}:${window_name}" "$command" C-m
+    fi
+}
+
 # ====================== 启动函数 ======================
 cleanup() {
     pkill -f roscore 2>/dev/null || true
