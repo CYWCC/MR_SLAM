@@ -25,7 +25,7 @@ TOOLS_DIR="${MRSLAM_ROOT}/Tools"
 VIS_DIR="${MRSLAM_ROOT}/Visualization"
 
 # ====================== relay 脚本路径（请按实际修改） ======================
-RELAY_PY="/home/cyw_local/MR_SLAM/Tools/simple_submap_relay.py"
+RELAY_PY="/home/cyw_local/MR_SLAM/Tools/relay_odom_pc2.py"
 
 # ====================== bag路径（请根据实际情况修改） ======================
 BAG0="/media/cyw/KESU/mapping_data/MRDR_Odom_data/group1/robot0.bag"
