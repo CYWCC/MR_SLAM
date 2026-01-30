@@ -25,12 +25,14 @@ TOOLS_DIR="${MRSLAM_ROOT}/Tools"
 VIS_DIR="${MRSLAM_ROOT}/Visualization"
 
 # ====================== relay 脚本路径（请按实际修改） ======================
-RELAY_PY="/home/cyw_local/MR_SLAM/Tools/relay_odom_pc2.py"
+RELAY_PY="/home/cyw_local/MR_SLAM/relay_odom_pc2.py"
 
 # ====================== bag路径（请根据实际情况修改） ======================
-BAG0="/media/cyw/KESU/mapping_data/MRDR_Odom_data/group1/robot0.bag"
-BAG1="/media/cyw/KESU/mapping_data/MRDR_Odom_data/group1/robot1.bag"
-BAG2="/media/cyw/KESU/mapping_data/MRDR_Odom_data/group1/robot2.bag"
+group = "group5"
+
+BAG0="/media/cyw/KESU/mapping_data/MRDR_Odom_data/${group}/robot0.bag"
+BAG1="/media/cyw/KESU/mapping_data/MRDR_Odom_data/${group}/robot1.bag"
+BAG2="/media/cyw/KESU/mapping_data/MRDR_Odom_data/${group}/robot2.bag"
 
 NUM_ROBOTS=3
 LOOP_DETECTION_METHOD="scancontext"
@@ -38,8 +40,8 @@ ENABLE_ELEVATION_MAPPING=false
 ENABLE_COSTMAP=false
 
 # ====================== relay 参数（可按需修改） ======================
-DIST_TH="1.5"
-VOXEL_LEAF="0.2"
+DIST_TH="1.5"  # 1.5
+VOXEL_LEAF="0.4" # 0.2
 
 # 关键：这里请填你原 C++ 里 SensorName（去掉前导 / 也可以）
 # 例如：velodyne / livox / ouster / base_link 等
@@ -147,27 +149,34 @@ start_rosbags() {
 
     run_in_tmux "jackal_mrslam" "bag0" \
         "rosbag play $BAG0 --clock \
-         /robot_0/odom:=/robot_1/Odometry_raw \
-         /robot_0/full_cloud:=/robot_1/cloud_registered_body"
+         /robot0/odom:=/robot_1/Odometry_raw \
+         /robot0/full_cloud:=/robot_1/cloud_registered_body"
 
     run_in_tmux "jackal_mrslam" "bag1" \
-        "rosbag play $BAG1 --clock \
-         /robot_1/odom:=/robot_2/Odometry_raw \
-         /robot_1/full_cloud:=/robot_2/cloud_registered_body"
+        "rosbag play $BAG1 \
+         /robot1/odom:=/robot_2/Odometry_raw \
+         /robot1/full_cloud:=/robot_2/cloud_registered_body"
 
     run_in_tmux "jackal_mrslam" "bag2" \
-        "rosbag play $BAG2 --clock \
-         /robot_2/odom:=/robot_3/Odometry_raw \
-         /robot_2/full_cloud:=/robot_3/cloud_registered_body"
+        "rosbag play $BAG2 \
+         /robot2/odom:=/robot_3/Odometry_raw \
+         /robot2/full_cloud:=/robot_3/cloud_registered_body"
 
     sleep 2
 }
 
 start_relays() {
-    log_step "启动 relay 节点：生成 /robot_i/Odometry /robot_i/cloud_registered /robot_i/submap ..."
+    log_step "启动 relay 节点：生成 /robot_i/Odometry /robot_i/cloud_registered /robot_i/submap (+ merged_cloud_registered + new_keyframe + TF)..."
     ensure_file "$RELAY_PY" "RELAY_PY"
 
     local SRC_CMD="source $MAPPING_WS/devel/setup.bash"
+
+    # 你要对齐 C++ 行为：建议保持这些默认打开
+    local DOWNSAMPLE_EACH_FRAME=1      # 对齐 C++：每帧先下采样再累积
+    local PUBLISH_WORLD_CLOUD=0        # 是否发布每帧世界云 /robot_i/cloud_registered
+    local PUBLISH_MERGED_CLOUD=1       # 对齐 C++：发布 /robot_i/merged_cloud_registered
+    local PUBLISH_NEW_KEYFRAME=1       # 对齐 C++：发布 /robot_i/new_keyframe
+    local PUBLISH_TF=1                 # 对齐 C++：广播 TF /robot_i/odom -> /robot_i/${SENSOR_NAME}
 
     # robot_1
     local WF1; WF1="$(make_world_frame 1)"
@@ -179,10 +188,17 @@ start_relays() {
          --cloud_world_topic /robot_1/cloud_registered \
          --odom_relay_topic /robot_1/Odometry \
          --submap_topic /robot_1/submap \
+         --merged_cloud_topic /robot_1/merged_cloud_registered \
+         --new_keyframe_topic /robot_1/new_keyframe \
          --world_frame $WF1 \
          --body_frame $BF1 \
          --distance_thresh $DIST_TH \
-         --voxel_leaf $VOXEL_LEAF"
+         --voxel_leaf $VOXEL_LEAF \
+         --downsample_each_frame $DOWNSAMPLE_EACH_FRAME \
+         --publish_world_cloud $PUBLISH_WORLD_CLOUD \
+         --publish_merged_cloud $PUBLISH_MERGED_CLOUD \
+         --publish_new_keyframe $PUBLISH_NEW_KEYFRAME \
+         --publish_tf $PUBLISH_TF"
 
     # robot_2
     local WF2; WF2="$(make_world_frame 2)"
@@ -194,10 +210,17 @@ start_relays() {
          --cloud_world_topic /robot_2/cloud_registered \
          --odom_relay_topic /robot_2/Odometry \
          --submap_topic /robot_2/submap \
+         --merged_cloud_topic /robot_2/merged_cloud_registered \
+         --new_keyframe_topic /robot_2/new_keyframe \
          --world_frame $WF2 \
          --body_frame $BF2 \
          --distance_thresh $DIST_TH \
-         --voxel_leaf $VOXEL_LEAF"
+         --voxel_leaf $VOXEL_LEAF \
+         --downsample_each_frame $DOWNSAMPLE_EACH_FRAME \
+         --publish_world_cloud $PUBLISH_WORLD_CLOUD \
+         --publish_merged_cloud $PUBLISH_MERGED_CLOUD \
+         --publish_new_keyframe $PUBLISH_NEW_KEYFRAME \
+         --publish_tf $PUBLISH_TF"
 
     # robot_3
     local WF3; WF3="$(make_world_frame 3)"
@@ -209,15 +232,26 @@ start_relays() {
          --cloud_world_topic /robot_3/cloud_registered \
          --odom_relay_topic /robot_3/Odometry \
          --submap_topic /robot_3/submap \
+         --merged_cloud_topic /robot_3/merged_cloud_registered \
+         --new_keyframe_topic /robot_3/new_keyframe \
          --world_frame $WF3 \
          --body_frame $BF3 \
          --distance_thresh $DIST_TH \
-         --voxel_leaf $VOXEL_LEAF"
+         --voxel_leaf $VOXEL_LEAF \
+         --downsample_each_frame $DOWNSAMPLE_EACH_FRAME \
+         --publish_world_cloud $PUBLISH_WORLD_CLOUD \
+         --publish_merged_cloud $PUBLISH_MERGED_CLOUD \
+         --publish_new_keyframe $PUBLISH_NEW_KEYFRAME \
+         --publish_tf $PUBLISH_TF"
 
     log_config "Relay frames:"
     log_config "  robot_1: world_frame=$WF1  body_frame=$BF1"
     log_config "  robot_2: world_frame=$WF2  body_frame=$BF2"
     log_config "  robot_3: world_frame=$WF3  body_frame=$BF3"
+    log_config "Relay topics:"
+    log_config "  /robot_i/merged_cloud_registered  /robot_i/new_keyframe (对齐 C++)"
+    log_config "Relay switches:"
+    log_config "  downsample_each_frame=$DOWNSAMPLE_EACH_FRAME publish_world_cloud=$PUBLISH_WORLD_CLOUD publish_tf=$PUBLISH_TF"
 
     sleep 2
 }

@@ -38,7 +38,7 @@ FULL_BAG_DIR="/media/cyw/KESU/mapping_data/MR_SLAM_data"
 # 循环检测方法: disco, scancontext, ring, ringplusplus
 # 注意: ring/ringplusplus 需要与 GPU 兼容的 PyTorch
 # RTX 30xx/40xx 系列可能需要重新安装 PyTorch，建议使用 scancontext 或 disco
-LOOP_DETECTION_METHOD="disco"
+LOOP_DETECTION_METHOD="scancontext"
 
 # 里程计方法: fastlio, aloam
 ODOMETRY_METHOD="fastlio"
