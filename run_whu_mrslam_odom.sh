@@ -28,7 +28,7 @@ VIS_DIR="${MRSLAM_ROOT}/Visualization"
 RELAY_PY="/home/cyw_local/MR_SLAM/relay_odom_pc2.py"
 
 # ====================== bag路径（请根据实际情况修改） ======================
-group = "group5"
+group="group5"
 
 BAG0="/media/cyw/KESU/mapping_data/MRDR_Odom_data/${group}/robot0.bag"
 BAG1="/media/cyw/KESU/mapping_data/MRDR_Odom_data/${group}/robot1.bag"
@@ -41,7 +41,7 @@ ENABLE_COSTMAP=false
 
 # ====================== relay 参数（可按需修改） ======================
 DIST_TH="1.5"  # 1.5
-VOXEL_LEAF="0.4" # 0.2
+VOXEL_LEAF="0.2" # 0.2
 
 # 关键：这里请填你原 C++ 里 SensorName（去掉前导 / 也可以）
 # 例如：velodyne / livox / ouster / base_link 等
@@ -148,7 +148,7 @@ start_rosbags() {
     ensure_file "$BAG2" "BAG2"
 
     run_in_tmux "jackal_mrslam" "bag0" \
-        "rosbag play $BAG0 --clock \
+        "rosbag play $BAG0 \
          /robot0/odom:=/robot_1/Odometry_raw \
          /robot0/full_cloud:=/robot_1/cloud_registered_body"
 
@@ -158,7 +158,7 @@ start_rosbags() {
          /robot1/full_cloud:=/robot_2/cloud_registered_body"
 
     run_in_tmux "jackal_mrslam" "bag2" \
-        "rosbag play $BAG2 \
+        "rosbag play $BAG2 --clock \
          /robot2/odom:=/robot_3/Odometry_raw \
          /robot2/full_cloud:=/robot_3/cloud_registered_body"
 
