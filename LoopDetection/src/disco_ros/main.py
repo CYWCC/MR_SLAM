@@ -284,6 +284,11 @@ def detect_loop_icp(robotid_current, idx_current, pc_current, DiSCO_current, fft
     kdtree_pc = KDTree(np.array(DiSCO_candidates))
     dists_pc, idxs_pc = kdtree_pc.query(DiSCO_current.reshape(1,-1), k=num_candidates)
 
+    print("Nearest distance: ", dists_pc)
+    if dists_pc[0][0] > cfg.dist_threshold:
+        print("No loop detected.")
+        return
+
     for i in range(num_candidates):
         idx_sc = idxs_pc[0][i]
         FFT_candidate = FFT_candidates[idx_sc] 
@@ -356,7 +361,7 @@ def callback1(data):
     times = time.time()
     pc_DiSCO, fft_result = generate_DiSCO(pc_normalized)
     timee = time.time()
-    print("Descriptors generated time:", timee - times, 's')
+    # print("Descriptors generated time:", timee - times, 's')
 
     # detect the loop and apply icp
     # candidate robot id: 1
@@ -406,7 +411,7 @@ def callback2(data):
     times = time.time()
     pc_DiSCO, fft_result = generate_DiSCO(pc_normalized)
     timee = time.time()
-    print("Descriptors generated time:", timee - times, 's')
+    # print("Descriptors generated time:", timee - times, 's')
 
     # detect the loop and apply icp
     # candidate robot id: 1
@@ -485,10 +490,11 @@ if __name__ == "__main__":
     parser.add_argument('--num_height', type=int, default=20) 
     parser.add_argument('--max_length', type=int, default=1)
     parser.add_argument('--max_height', type=int, default=1)
+    parser.add_argument('--dist_threshold', type=float, default=10.0)
     parser.add_argument('--max_icp_iter', type=int, default=50) # 20 iterations is usually enough
     parser.add_argument('--icp_tolerance', type=float, default=0.001) 
     parser.add_argument('--icp_max_distance', type=float, default=5.0)
-    parser.add_argument('--icp_fitness_score', type=float, default=0.10) # icp fitness score threshold
+    parser.add_argument('--icp_fitness_score', type=float, default=0.20) # icp fitness score threshold
 
     args = parser.parse_args()
 
@@ -498,6 +504,7 @@ if __name__ == "__main__":
     cfg.num_height = args.max_height
     cfg.max_length = args.max_length
     cfg.max_height = args.max_height
+    cfg.dist_threshold = args.dist_threshold
     cfg.icp_max_distance = args.icp_max_distance
     cfg.max_icp_iter = args.max_icp_iter
     cfg.icp_tolerance = args.icp_tolerance

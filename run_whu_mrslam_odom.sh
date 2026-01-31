@@ -26,6 +26,9 @@ VIS_DIR="${MRSLAM_ROOT}/Visualization"
 
 # ====================== relay 脚本路径（请按实际修改） ======================
 RELAY_PY="/home/cyw_local/MR_SLAM/relay_odom_pc2.py"
+SC_PY="/home/cyw_local/MR_SLAM/LoopDetection/src/RING_ros/main_SC.py"
+disco_PY="/home/cyw_local/MR_SLAM/LoopDetection/src/disco_ros/main.py" 
+global_manager_launch="/home/cyw_local/MR_SLAM/Mapping/src/global_manager/launch/global_manager.launch"
 
 # ====================== bag路径（请根据实际情况修改） ======================
 group="group5"
@@ -35,7 +38,7 @@ BAG1="/media/cyw/KESU/mapping_data/MRDR_Odom_data/${group}/robot1.bag"
 BAG2="/media/cyw/KESU/mapping_data/MRDR_Odom_data/${group}/robot2.bag"
 
 NUM_ROBOTS=3
-LOOP_DETECTION_METHOD="scancontext"
+LOOP_DETECTION_METHOD="scancontext"   # disco / scancontext / ring / ringplusplus
 ENABLE_ELEVATION_MAPPING=false
 ENABLE_COSTMAP=false
 
@@ -148,7 +151,7 @@ start_rosbags() {
     ensure_file "$BAG2" "BAG2"
 
     run_in_tmux "jackal_mrslam" "bag0" \
-        "rosbag play $BAG0 \
+        "rosbag play $BAG0  \
          /robot0/odom:=/robot_1/Odometry_raw \
          /robot0/full_cloud:=/robot_1/cloud_registered_body"
 
@@ -257,19 +260,41 @@ start_relays() {
 }
 
 start_loop_detection() {
-    log_step "启动循环检测..."
-    source_workspace "$LOOPDETECTION_WS"
-    local WORK_DIR="/tmp/loop_detection"
-    run_in_tmux "jackal_mrslam" "loop_detect" \
-        "source $LOOPDETECTION_WS/devel/setup.bash && mkdir -p $WORK_DIR && cd $WORK_DIR && python3 $LOOPDETECTION_WS/src/RING_ros/main_SC.py"
-    sleep 2
+  log_step "启动循环检测 (${LOOP_DETECTION_METHOD})..."
+  local WORK_DIR="/tmp/loop_detection"
+
+  case "${LOOP_DETECTION_METHOD}" in
+    disco)
+      run_in_tmux "jackal_mrslam" "loop_detect" \
+        "source ${LOOPDETECTION_WS}/devel/setup.bash && mkdir -p ${WORK_DIR} && cd ${WORK_DIR} && python3 ${disco_PY}"
+      ;;
+    scancontext)
+      run_in_tmux "jackal_mrslam" "loop_detect" \
+        "source ${LOOPDETECTION_WS}/devel/setup.bash && mkdir -p ${WORK_DIR} && cd ${WORK_DIR} && python3 $SC_PY --dist_threshold 0.4 --icp_fitness_score 0.6"
+      ;;
+    ring)
+      run_in_tmux "jackal_mrslam" "loop_detect" \
+        "source ${LOOPDETECTION_WS}/devel/setup.bash && mkdir -p ${WORK_DIR} && cd ${WORK_DIR} && python3 ${LOOPDETECTION_WS}/src/RING_ros/main_RING.py"
+      ;;
+    ringplusplus)
+      run_in_tmux "jackal_mrslam" "loop_detect" \
+        "source ${LOOPDETECTION_WS}/devel/setup.bash && mkdir -p ${WORK_DIR} && cd ${WORK_DIR} && python3 ${LOOPDETECTION_WS}/src/RING_ros/main_RINGplusplus.py"
+      ;;
+    *)
+      log_error "未知 LOOP_DETECTION_METHOD: ${LOOP_DETECTION_METHOD}"
+      exit 1
+      ;;
+  esac
+
+  sleep 1
 }
+
 
 start_global_manager() {
     log_step "启动 global_manager..."
     source_workspace "$MAPPING_WS"
     run_in_tmux "jackal_mrslam" "global_mgr" \
-        "source $MAPPING_WS/devel/setup.bash && roslaunch global_manager global_manager.launch"
+        "source $MAPPING_WS/devel/setup.bash && roslaunch $global_manager_launch"
     sleep 2
 }
 

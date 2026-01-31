@@ -169,16 +169,30 @@ def detect_loop_icp_SC(robotid_current, idx_current, pc_current, SC_current, Rin
         yaw_diff_pc.append(yaw_pc)
         idx_top1_pc = idxs_pc[0][0]
 
+        if dist_pc > cfg.dist_threshold:
+            # print("No loop detected.")
+            return
+
         pred_angle_pc = yaw_diff_pc[0] # in grids
         pred_angle_pc = pred_angle_pc * 2 * np.pi / cfg.num_sector # in radians
         init_pose_pc = getSE3(0, 0, pred_angle_pc)
 
         pc_matched_pc = pc_candidates[idx_top1_pc]
-        fitness_pc, loop_transform = fast_gicp(pc_current, pc_matched_pc, max_correspondence_distance=cfg.icp_max_distance, init_pose=init_pose_pc)
+        fitness_pc, loop_transform = fast_gicp(pc_current, pc_matched_pc, max_correspondence_distance=cfg.icp_max_distance) #, init_pose=init_pose_pc
         
         print("fitness: ", fitness_pc)
         if fitness_pc < cfg.icp_fitness_score and robotid_current != robotid_candidate:
             print("ICP fitness score is less than threshold, accept the loop.")
+            # # save pcd and regisedtered pcd
+            # pc_matched_pc_path = "/home/cyw_local/MR_SLAM/pc_matched_robot_{}_idx_{}.pcd".format(robotid_candidate, idx_top1_pc)
+            # o3d.io.write_point_cloud(pc_matched_pc_path, o3d.geometry.PointCloud(o3d.utility.Vector3dVector(pc_matched_pc)))
+            # # pc_current_path = "/home/cyw_local/MR_SLAM/pc_current_robot_{}_idx_{}.pcd".format(robotid_current, idx_current)
+            # # o3d.io.write_point_cloud(pc_current_path, o3d.geometry.PointCloud(o3d.utility.Vector3dVector(pc_current)))
+            # reg_pcd = loop_transform.dot(np.vstack((pc_current.T, np.ones((1, pc_current.shape[0])))))
+            # reg_pcd_path = "/home/cyw_local/MR_SLAM/pc_registed_robot_{}_idx_{}_to_robot_{}_idx_{}.pcd".format(robotid_current, idx_current, robotid_candidate, idx_top1_pc)
+            # o3d.io.write_point_cloud(reg_pcd_path, o3d.geometry.PointCloud(o3d.utility.Vector3dVector(reg_pcd[0:3, :].T)))
+            print("loop_transform: \n", loop_transform)
+            
             Loop_msgs = Loops()
             # publish the result of loop detection and icp
             Loop_msg = Loop()
@@ -197,8 +211,8 @@ def detect_loop_icp_SC(robotid_current, idx_current, pc_current, SC_current, Rin
             Loop_msgs.Loops.append(Loop_msg)
             pub.publish(Loop_msgs)      
             print("Scan Context: Loop detected between id ", Loop_msg.id0, " and id ", Loop_msg.id1)          
-        else:
-            print("Scan Context: ICP fitness score is larger than threshold, reject the loop.")
+        # else:
+            # print("Scan Context: ICP fitness score is larger than threshold, reject the loop.1111111111111111111111111111111")
 
 
 # RING: perform loop detection and apply icp
@@ -217,6 +231,19 @@ def detect_loop_icp_RING(robotid_current, idx_current, pc_current, RING_current,
             RING_idxs.append(idx)
             RING_dists.append(dist)
             RING_angles.append(angle)
+        print("=================================================")
+        print("=================================================")
+        print("=================================================")
+        print("=================================================")
+        print("=================================================")
+        print("dist: ", dist, "< threshold:", cfg.dist_threshold)
+        print("=================================================")
+        print("=================================================")
+        print("=================================================")
+        print("=================================================")
+        print("=================================================")
+        print("=================================================")
+        print("=================================================")
 
     if len(RING_dists) == 0:
         print("No loop detected.")
@@ -342,7 +369,7 @@ def callback1(data):
 
     # pc_bev, pc_RING, pc_TIRING, _ = generate_RING(pc_normalized)
     timee = time.time()
-    print("Descriptors generated time:", timee - times, 's')
+    # print("Descriptors generated time:", timee - times, 's')
 
     # detect the loop and apply icp
     # candidate robot id: 1
@@ -399,7 +426,7 @@ def callback2(data):
     ringkey_pc = SC.make_ringkey(pc_sc) 
     # pc_bev, pc_RING, pc_TIRING, _ = generate_RING(pc_normalized)
     timee = time.time()
-    print("Descriptors generated time:", timee - times, 's')
+    # print("Descriptors generated time:", timee - times, 's')
 
     # detect the loop and apply icp
     # candidate robot id: 1
@@ -454,7 +481,7 @@ def callback3(data):
     ringkey_pc = SC.make_ringkey(pc_sc) 
     # pc_bev, pc_RING, pc_TIRING, _ = generate_RING(pc_normalized)
     timee = time.time()
-    print("Descriptors generated time:", timee - times, 's')
+    # print("Descriptors generated time:", timee - times, 's')
 
     # detect the loop and apply icp
     # candidate robot id: 1
@@ -490,12 +517,12 @@ if __name__ == "__main__":
     parser.add_argument('--num_height', type=int, default=1) 
     parser.add_argument('--max_length', type=int, default=1)
     parser.add_argument('--max_height', type=int, default=1)
-    parser.add_argument('--dist_threshold', type=float, default=0.48) # 0.48 is usually safe (for avoiding false loop closure)
+    parser.add_argument('--dist_threshold', type=float, default=0.2) # 0.48 is usually safe (for avoiding false loop closure)
     parser.add_argument('--max_icp_iter', type=int, default=20) # 20 iterations is usually enough
     parser.add_argument('--icp_tolerance', type=float, default=0.001) 
-    parser.add_argument('--icp_max_distance', type=float, default=5.0)
+    parser.add_argument('--icp_max_distance', type=float, default=10.0)
     parser.add_argument('--num_icp_points', type=int, default=6000) # 6000 is enough for real time
-    parser.add_argument('--icp_fitness_score', type=float, default=0.08) # icp fitness score threshold
+    parser.add_argument('--icp_fitness_score', type=float, default=0.12) # icp fitness score threshold
 
     args = parser.parse_args()
 

@@ -29,10 +29,14 @@
 
     <!-- file and dir  -->
     <param name="manual_config_dir" value="$(find global_manager)/cfg/real/"/>
-    <param name="elevation_map_saving_filename" value="$(find global_manager)/log/globalElevationMap.pcd"/> 
-    <param name="global_map_saving_filename" value="$(find global_manager)/log/globalMap.pcd"/>    
-    <param name="pg_saving_filename" value="$(find global_manager)/log/full_graph.g2o"/>
-    <param name="keyframe_saving_dir" value="$(find global_manager)/log/Keyframes/"/>   
+    <!-- <param name="elevation_map_saving_filename" value="$(find global_manager)/log/globalElevationMap.pcd"/> 
+    <param name="global_map_saving_filename" value="$(find global_manager)/log/globalMap.pcd"/>     -->
+    <!-- <param name="pg_saving_filename" value="$(find global_manager)/log/full_graph.g2o"/> -->
+    <!-- <param name="keyframe_saving_dir" value="$(find global_manager)/log/Keyframes/"/>    -->
+    <param name="elevation_map_saving_filename" value="/home/cyw_local/MR_SLAM/Mapping/src/global_manager/log/globalElevationMap.pcd"/> 
+    <param name="global_map_saving_filename" value="/home/cyw_local/MR_SLAM/Mapping/src/global_manager/log/globalMap.pcd"/>
+    <param name="pg_saving_filename" value="/home/cyw_local/MR_SLAM/Mapping/src/global_manager/log/full_graph.g2o"/>
+    <param name="keyframe_saving_dir" value="/home/cyw_local/MR_SLAM/Mapping/src/global_manager/log/Keyframes/"/>   
 
     <!-- specific parameters -->
     <param name="start_robot_id" value="1"/>
@@ -51,7 +55,7 @@
     <param name="registration_method" value="FAST_VGICP_CUDA"/>
     <param name="submap_size" value="1"/>
     <param name="icp_iters" value="50"/>
-    <param name="icp_fitness_score" value="2.0"/>
+    <param name="icp_fitness_score" value="10.0"/>
     <param name="icp_filter_size" value="0.2"/>
     <param name="submap_voxel_leaf_size" value="0.2"/>
     <param name="globalmap_voxel_leaf_size" value="0.5"/>
