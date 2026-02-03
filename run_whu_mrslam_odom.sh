@@ -31,7 +31,7 @@ disco_PY="/home/cyw_local/MR_SLAM/LoopDetection/src/disco_ros/main.py"
 global_manager_launch="/home/cyw_local/MR_SLAM/Mapping/src/global_manager/launch/global_manager.launch"
 
 # ====================== bag路径（请根据实际情况修改） ======================
-group="group5"
+group="group6"
 
 BAG0="/media/cyw/KESU/mapping_data/MRDR_Odom_data/${group}/robot0.bag"
 BAG1="/media/cyw/KESU/mapping_data/MRDR_Odom_data/${group}/robot1.bag"
@@ -156,7 +156,7 @@ start_rosbags() {
          /robot0/full_cloud:=/robot_1/cloud_registered_body"
 
     run_in_tmux "jackal_mrslam" "bag1" \
-        "rosbag play $BAG1 \
+        "rosbag play $BAG1  \
          /robot1/odom:=/robot_2/Odometry_raw \
          /robot1/full_cloud:=/robot_2/cloud_registered_body"
 
@@ -270,7 +270,7 @@ start_loop_detection() {
       ;;
     scancontext)
       run_in_tmux "jackal_mrslam" "loop_detect" \
-        "source ${LOOPDETECTION_WS}/devel/setup.bash && mkdir -p ${WORK_DIR} && cd ${WORK_DIR} && python3 $SC_PY --dist_threshold 0.4 --icp_fitness_score 0.6"
+        "source ${LOOPDETECTION_WS}/devel/setup.bash && mkdir -p ${WORK_DIR} && cd ${WORK_DIR} && python3 $SC_PY --dist_threshold 0.3 --icp_fitness_score 0.5"
       ;;
     ring)
       run_in_tmux "jackal_mrslam" "loop_detect" \
