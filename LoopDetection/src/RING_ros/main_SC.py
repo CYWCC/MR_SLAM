@@ -169,6 +169,8 @@ def detect_loop_icp_SC(robotid_current, idx_current, pc_current, SC_current, Rin
         yaw_diff_pc.append(yaw_pc)
         idx_top1_pc = idxs_pc[0][0]
 
+        print("dist_th:" , cfg.dist_threshold)
+        print("icp_fitness_score_th:" , cfg.icp_fitness_score)
         if dist_pc > cfg.dist_threshold:
             # print("No loop detected.")
             return
@@ -231,19 +233,6 @@ def detect_loop_icp_RING(robotid_current, idx_current, pc_current, RING_current,
             RING_idxs.append(idx)
             RING_dists.append(dist)
             RING_angles.append(angle)
-        print("=================================================")
-        print("=================================================")
-        print("=================================================")
-        print("=================================================")
-        print("=================================================")
-        print("dist: ", dist, "< threshold:", cfg.dist_threshold)
-        print("=================================================")
-        print("=================================================")
-        print("=================================================")
-        print("=================================================")
-        print("=================================================")
-        print("=================================================")
-        print("=================================================")
 
     if len(RING_dists) == 0:
         print("No loop detected.")
@@ -518,9 +507,9 @@ if __name__ == "__main__":
     parser.add_argument('--max_length', type=int, default=1)
     parser.add_argument('--max_height', type=int, default=1)
     parser.add_argument('--dist_threshold', type=float, default=0.2) # 0.48 is usually safe (for avoiding false loop closure)
-    parser.add_argument('--max_icp_iter', type=int, default=20) # 20 iterations is usually enough
-    parser.add_argument('--icp_tolerance', type=float, default=0.001) 
-    parser.add_argument('--icp_max_distance', type=float, default=10.0)
+    parser.add_argument('--max_icp_iter', type=int, default=50) # 20 iterations is usually enough
+    parser.add_argument('--icp_tolerance', type=float, default=0.01) 
+    parser.add_argument('--icp_max_distance', type=float, default=5.0)
     parser.add_argument('--num_icp_points', type=int, default=6000) # 6000 is enough for real time
     parser.add_argument('--icp_fitness_score', type=float, default=0.12) # icp fitness score threshold
 

@@ -284,10 +284,13 @@ def detect_loop_icp(robotid_current, idx_current, pc_current, DiSCO_current, fft
     kdtree_pc = KDTree(np.array(DiSCO_candidates))
     dists_pc, idxs_pc = kdtree_pc.query(DiSCO_current.reshape(1,-1), k=num_candidates)
 
-    print("Nearest distance: ", dists_pc)
+    # print("dist_th:" , cfg.dist_threshold)
+    print("Nearest distances: ", dists_pc[0][0])
     if dists_pc[0][0] > cfg.dist_threshold:
-        print("No loop detected.")
+        # print("No loop detected.")
         return
+    
+    # print("Nearest distance: ", dists_pc, "<", cfg.dist_threshold)
 
     for i in range(num_candidates):
         idx_sc = idxs_pc[0][i]
@@ -461,7 +464,7 @@ def callback3(data):
     times = time.time()
     pc_DiSCO, fft_result = generate_DiSCO(pc_normalized)
     timee = time.time()
-    print("Descriptors generated time:", timee - times, 's')
+    # print("Descriptors generated time:", timee - times, 's')
 
     # detect the loop and apply icp
     # candidate robot id: 1
@@ -490,9 +493,9 @@ if __name__ == "__main__":
     parser.add_argument('--num_height', type=int, default=20) 
     parser.add_argument('--max_length', type=int, default=1)
     parser.add_argument('--max_height', type=int, default=1)
-    parser.add_argument('--dist_threshold', type=float, default=10.0)
+    parser.add_argument('--dist_threshold', type=float, default=1.0)
     parser.add_argument('--max_icp_iter', type=int, default=50) # 20 iterations is usually enough
-    parser.add_argument('--icp_tolerance', type=float, default=0.001) 
+    parser.add_argument('--icp_tolerance', type=float, default=0.01) 
     parser.add_argument('--icp_max_distance', type=float, default=5.0)
     parser.add_argument('--icp_fitness_score', type=float, default=0.20) # icp fitness score threshold
 

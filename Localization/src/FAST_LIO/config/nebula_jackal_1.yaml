@@ -1,0 +1,43 @@
+common:
+    lid_topic:  "/robot_1/pointcloud"
+    imu_topic:  "/robot_1/imu"
+    time_sync_en: false         # ONLY turn on when external time synchronization is really not possible
+
+preprocess:
+    lidar_type: 2                # 1 for Livox CustomMsg, 2 for Velodyne/PointCloud2, 3 for ouster LiDAR
+    scan_line: 16                 # Mid360 has 4 scan lines
+    scan_rate: 10                # 10 Hz
+    timestamp_unit: 0            # 0-second, 1-milisecond, 2-microsecond, 3-nanosecond
+    blind: 0.5
+
+mapping:
+    acc_cov: 0.1
+    gyr_cov: 0.1
+    b_acc_cov: 0.0001
+    b_gyr_cov: 0.0001
+    fov_degree:    180
+    det_range:     100.0
+    extrinsic_est_en:  true      # true: enable the online estimation of IMU-LiDAR extrinsic
+
+    # # # Husky
+    extrinsic_T: [-0.147, -0.038, 0.240]
+    extrinsic_R: [ 0.70513,  0.70907, -0.00352,
+                -0.70907,  0.70513,  0.00354,
+                0.00499,  0.00000,  0.99998 ]
+    
+    # # # Spot1
+    # extrinsic_T: [0.0, -0.290, 0.143]
+    # extrinsic_R: [-0.03699156, 0.99931558, 0.0,
+    #             -0.99931558, -0.03699156, 0.0,
+    #              0.0,         0.0,        1.0]
+
+publish:
+    path_en:  true
+    scan_publish_en:  true       # false: close all the point cloud output
+    dense_publish_en: false       # false: low down the points number in a global-frame point clouds scan.
+    scan_bodyframe_pub_en: true  # true: output the point cloud scans in IMU-body-frame
+
+pcd_save:
+    pcd_save_en: false
+    interval: -1                 # how many LiDAR frames saved in each pcd file; 
+                                 # -1 : all frames will be saved in ONE pcd file, may lead to memory crash when having too much frames.

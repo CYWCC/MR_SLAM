@@ -31,20 +31,29 @@ disco_PY="/home/cyw_local/MR_SLAM/LoopDetection/src/disco_ros/main.py"
 global_manager_launch="/home/cyw_local/MR_SLAM/Mapping/src/global_manager/launch/global_manager.launch"
 
 # ====================== bag路径（请根据实际情况修改） ======================
-group="group6"
+group="S3E_Square_1" # group1 group5 group6 group7 snail
 
-BAG0="/media/cyw/KESU/mapping_data/MRDR_Odom_data/${group}/robot0.bag"
-BAG1="/media/cyw/KESU/mapping_data/MRDR_Odom_data/${group}/robot1.bag"
-BAG2="/media/cyw/KESU/mapping_data/MRDR_Odom_data/${group}/robot2.bag"
+# BAG0="/media/cyw/KESU/mapping_data/MRDR_Odom_data/${group}/robot0.bag"
+# BAG1="/media/cyw/KESU/mapping_data/MRDR_Odom_data/${group}/robot1.bag"
+# BAG2="/media/cyw/KESU/mapping_data/MRDR_Odom_data/${group}/robot2.bag"
+
+BAG0="/media/cyw/KESU/mapping_data/MRDR_Odom_data/${group}/data1.bag"
+BAG1="/media/cyw/KESU/mapping_data/MRDR_Odom_data/${group}/data2.bag"
+BAG2="/media/cyw/KESU/mapping_data/MRDR_Odom_data/${group}/data3.bag"
 
 NUM_ROBOTS=3
-LOOP_DETECTION_METHOD="scancontext"   # disco / scancontext / ring / ringplusplus
 ENABLE_ELEVATION_MAPPING=false
 ENABLE_COSTMAP=false
 
+# ====================== loop detection 参数（可按需修改） ======================
+LOOP_DETECTION_METHOD="disco"   # disco / scancontext / ring / ringplusplus
+SC_DIS_TH=0.3
+DISCO_DIST_TH=13.0
+ICP_FITNESS_SCORES=0.25
+
 # ====================== relay 参数（可按需修改） ======================
-DIST_TH="1.5"  # 1.5
-VOXEL_LEAF="0.2" # 0.2
+DIST_TH="1.0"  # 1.0  snail:2.5
+VOXEL_LEAF="0.4" # 0.2
 
 # 关键：这里请填你原 C++ 里 SensorName（去掉前导 / 也可以）
 # 例如：velodyne / livox / ouster / base_link 等
@@ -152,18 +161,18 @@ start_rosbags() {
 
     run_in_tmux "jackal_mrslam" "bag0" \
         "rosbag play $BAG0  \
-         /robot0/odom:=/robot_1/Odometry_raw \
-         /robot0/full_cloud:=/robot_1/cloud_registered_body"
+         /robot_0/odom:=/robot_1/Odometry_raw \
+         /robot_0/full_cloud:=/robot_1/cloud_registered_body"
 
     run_in_tmux "jackal_mrslam" "bag1" \
         "rosbag play $BAG1  \
-         /robot1/odom:=/robot_2/Odometry_raw \
-         /robot1/full_cloud:=/robot_2/cloud_registered_body"
+         /robot_1/odom:=/robot_2/Odometry_raw \
+         /robot_1/full_cloud:=/robot_2/cloud_registered_body"
 
     run_in_tmux "jackal_mrslam" "bag2" \
         "rosbag play $BAG2 --clock \
-         /robot2/odom:=/robot_3/Odometry_raw \
-         /robot2/full_cloud:=/robot_3/cloud_registered_body"
+         /robot_2/odom:=/robot_3/Odometry_raw \
+         /robot_2/full_cloud:=/robot_3/cloud_registered_body"
 
     sleep 2
 }
@@ -266,11 +275,11 @@ start_loop_detection() {
   case "${LOOP_DETECTION_METHOD}" in
     disco)
       run_in_tmux "jackal_mrslam" "loop_detect" \
-        "source ${LOOPDETECTION_WS}/devel/setup.bash && mkdir -p ${WORK_DIR} && cd ${WORK_DIR} && python3 ${disco_PY}"
+        "source ${LOOPDETECTION_WS}/devel/setup.bash && mkdir -p ${WORK_DIR} && cd ${WORK_DIR} && python3 ${disco_PY} --icp_fitness_score ${ICP_FITNESS_SCORES} --dist_threshold ${DISCO_DIST_TH}"
       ;;
     scancontext)
       run_in_tmux "jackal_mrslam" "loop_detect" \
-        "source ${LOOPDETECTION_WS}/devel/setup.bash && mkdir -p ${WORK_DIR} && cd ${WORK_DIR} && python3 $SC_PY --dist_threshold 0.3 --icp_fitness_score 0.5"
+        "source ${LOOPDETECTION_WS}/devel/setup.bash && mkdir -p ${WORK_DIR} && cd ${WORK_DIR} && python3 $SC_PY --dist_threshold ${SC_DIS_TH} --icp_fitness_score ${ICP_FITNESS_SCORES}"
       ;;
     ring)
       run_in_tmux "jackal_mrslam" "loop_detect" \

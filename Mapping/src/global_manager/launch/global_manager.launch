@@ -14,7 +14,7 @@
     <param name="loop_closure_enable" value="true"/>
     <param name="use_other_descriptor" value="true"/>
     <param name="use_refined_initials" value="true"/>
-    <param name="odometry_loop_enable" value="false"/>    
+    <param name="odometry_loop_enable" value="true"/>    
     <param name="loop_detection_debug" value="false"/>
     <param name="manual_robots_config" value="true"/>
     <param name="enable_elevation_mapping" value="true"/>
